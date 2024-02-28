@@ -1,0 +1,21 @@
+---
+win_ver: 2022
+winsxs: '\\wadm01.lab.example.com\Deploy\SXS\{{ win_ver }}'
+winsxs_url: 'http://repousl/ansible/microsoft/sxs{{ win_ver }}.zip'
+netfx3_enabled: false
+netfx3_web_enabled: false
+
+### General PMO Settings
+winbaseline_addc: 'DC01'
+winbaseline_addc2: 'DC02'
+winbaseline_winjump: 'WADM01'
+winbaseline_svr_ou: 'OU=Machines,DC=lab,DC=example,DC=com'
+winbaseline_grp_ou: 'OU=GROUPS,DC=lab,DC=example,DC=com'
+winbaseline_adm_grp: 'PMO-IAC'
+winbaseline_mgt_grp: 'PMO-Managed'
+winbaseline_path: 'C:\PMO'
+winbaseline_secgroup: 'PMO-Secured'
+winbaseline_dnsip1: 10.18.227.11
+winbaseline_dnsip2: 10.18.227.12
+pki_ca: fqdn.here
+fipsenabled: false

@@ -1,0 +1,107 @@
+---
+- name: Check Automation Directories
+  win_file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ winbaseline_path }}"
+    - "{{ winbaseline_path }}\\Logs"
+    - "{{ winbaseline_path }}\\Temp"
+
+- name: Check Time Zone Settings
+  community.windows.win_timezone:
+    timezone: "Eastern Standard Time"
+
+- block:
+    - name: Download Windows SxS files
+      win_get_url:
+        url: '{{ winsxs_url }}'
+        dest: "{{ winbaseline_path }}\\sxs.zip"
+        force: no
+        timeout: 300
+
+    - name: Uncompress Windows SxS files
+      win_unzip:
+        src: "{{ winbaseline_path }}\\sxs.zip"
+        dest: "{{ winbaseline_path }}"
+
+    - name: Install .NET 3.5 Core
+      win_feature:
+        name:  '{{ item }}'
+        state: present
+        include_management_tools: yes
+        include_sub_features: no
+        source: '{{ winbaseline_path }}\{{ win_ver }}'
+      with_items:
+          -  NET-Framework-Features
+          -  NET-Framework-Core  
+      register: win_netfx  
+      
+    - name: Install .NET 3.5 Web
+      win_feature:
+        name: '{{ item }}'
+        state: present
+        include_management_tools: yes
+        include_sub_features: no
+        source: '{{ winbaseline_path }}\{{ win_ver }}'
+      with_items:
+        - Web-Net-Ext
+        - Web-Asp-Net
+        - Web-Asp-Net
+        - Web-ISAPI-Ext
+        - Web-ISAPI-Filter
+        - NET-HTTP-Activation  
+      when: netfx3_web_enabled == "true"     
+   
+  when: netfx3_enabled == "true"     
+
+- block:
+    - name: Install Windows Features
+      win_feature:
+        name: '{{ item }}'
+        state: present
+        include_management_tools: yes
+        include_sub_features: no  
+      with_items:
+        - "{{ win_features }}" 
+      register: new_features
+
+  when: win_features is defined     
+
+- name: Create shared directory structure
+  win_file:
+    path: '{{ item.path }}'
+    state: directory
+  with_items: '{{ win_shares }}'
+  tags:
+    - deploy
+    - config
+    - install
+  when: win_shares is defined
+  
+- name: Set shared folder permissions
+  win_acl:
+    user: "{{ share_group }}"
+    path: '{{ item.path }}'
+    type: allow
+    rights: Read,Write,Modify,FullControl,Delete
+  with_items: '{{ win_shares }}'
+  tags:
+    - deploy
+    - config
+    - install
+  when: win_shares is defined
+  
+
+- name: Add SMB shares
+  win_share:
+    name: '{{ item.name }}'
+    path: '{{ item.path }}'
+    list: yes
+  with_items: '{{ win_shares }}'
+  tags:
+    - deploy
+    - config
+    - install
+  when: win_shares is defined
+  
